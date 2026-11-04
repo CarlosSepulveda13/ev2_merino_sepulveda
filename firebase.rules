@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function cartaCorrecta(c) {
+      return c is map
+        && c.keys().hasOnly(['numero', 'pinta'])
+        && c.keys().hasAll(['numero', 'pinta'])
+        && (
+          (((c.numero is int && c.numero >= 1 && c.numero <= 10)
+            || c.numero in ['Jota', 'Queena', 'Kaiser'])
+            && c.pinta in ['diamante', 'corazon', 'trebol', 'pica'])
+          || (c.numero == 'J' && c.pinta == 'joker')
+        );
+    }
+
+    function valorNatural(v) {
+      return (v is int && v >= 1 && v <= 10)
+        || v in ['Jota', 'Queena', 'Kaiser'];
+    }
+
+    match /jugadascarioca/{jugadaId} {
+      // DEMOSTRACIÓN ACADÉMICA: lectura y creación públicas.
+      // Sin autenticación no es posible garantizar que cada mano sea genuina
+      // ni evitar abusos. La lógica completa se valida también en React.
+      allow read: if true;
+      allow create: if
+        request.resource.data.keys().hasOnly(['clave', 'tipo', 'numeros', 'cartas', 'creadoEn'])
+        && request.resource.data.keys().hasAll(['clave', 'tipo', 'numeros', 'cartas', 'creadoEn'])
+        && request.resource.data.clave == jugadaId
+        && jugadaId.size() <= 250
+        && request.resource.data.tipo == 'dos_trios'
+        && request.resource.data.numeros is list
+        && request.resource.data.numeros.size() == 2
+        && valorNatural(request.resource.data.numeros[0])
+        && valorNatural(request.resource.data.numeros[1])
+        && request.resource.data.numeros[0] != request.resource.data.numeros[1]
+        && request.resource.data.cartas is list
+        && request.resource.data.cartas.size() == 6
+        && cartaCorrecta(request.resource.data.cartas[0])
+        && cartaCorrecta(request.resource.data.cartas[1])
+        && cartaCorrecta(request.resource.data.cartas[2])
+        && cartaCorrecta(request.resource.data.cartas[3])
+        && cartaCorrecta(request.resource.data.cartas[4])
+        && cartaCorrecta(request.resource.data.cartas[5])
+        && request.resource.data.creadoEn == request.time;
+      allow update, delete: if false;
+    }
+  }
+}
