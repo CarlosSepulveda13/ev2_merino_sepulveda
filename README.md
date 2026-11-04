@@ -1,5 +1,5 @@
 Integrantes:
 
-Antonia Merino Tronocos
+Antonia Merino Troncoso
 
 Carlos Sepúlveda Navarrete
